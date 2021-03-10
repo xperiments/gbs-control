@@ -1,3 +1,6 @@
+/** i18n */
+
+// presets.resolution.title
 /** STRUCTS */
 interface Struct {
   name: string;

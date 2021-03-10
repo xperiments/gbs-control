@@ -1,3 +1,4 @@
+/** i18n */
 const Structs = {
     slots: [
         { name: "name", type: "string", size: 25 },
