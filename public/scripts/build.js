@@ -1,6 +1,18 @@
 const fs = require("fs");
 const html = fs.readFileSync("./../src/index.html.tpl", "utf-8");
-const js = fs.readFileSync("./../src/index.js", "utf-8");
+
+const locales = JSON.stringify(
+  fs.readdirSync("./../src/locales").reduce((acc, file) => {
+    acc[file.replace(".json", "")] = JSON.parse(
+      fs.readFileSync(`./../src/locales/${file}`, "utf8")
+    );
+    return acc;
+  }, {})
+);
+
+const js = fs
+  .readFileSync("./../src/index.js", "utf-8")
+  .concat(`\n\n/** LOCALES **/\nGBSControl.locales = ${locales};\n`);
 
 const icon1024 = fs
   .readFileSync("./../assets/icons/icon-1024-maskable.png")
