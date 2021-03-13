@@ -1,6 +1,26 @@
 /** i18n */
 
-// presets.resolution.title
+const updateLocale = (locale: string) => {
+  GBSStorage.write("gbsLocale", locale);
+  (GBSControl.ui.translatable as HTMLElement[]).forEach((el: HTMLElement) => {
+    const key = el.getAttribute("gbs-i18n");
+    const value = GBSControl.locales[locale][key];
+    if (value && value !== "") {
+      el.innerHTML = value;
+    }
+  });
+};
+
+const getLocaleList = () => {
+  return Object.keys(GBSControl.locales)
+    .map((locale: string) => {
+      return `<option value="${locale}"${
+        GBSControl.currentLocale === locale ? " selected" : ""
+      }>${GBSControl.locales[locale]["localeName"]}</option>`;
+    })
+    .join("");
+};
+
 /** STRUCTS */
 interface Struct {
   name: string;
@@ -157,6 +177,8 @@ const GBSControl = {
     promptCancel: null,
     promptContent: null,
     promptInput: null,
+    translatable: null,
+    localeSelector: null,
   },
   updateTerminalTimer: 0,
   webSocketServerUrl: "",
@@ -169,6 +191,8 @@ const GBSControl = {
   wsConnectCounter: 0,
   wsNoSuccessConnectingCounter: 0,
   wsTimeout: 0,
+  locales: null,
+  currentLocale: "en",
 };
 
 /** websocket services */
@@ -565,6 +589,7 @@ const fetchSlotNamesAndInit = () => {
         return;
       }
       initUIElements();
+      initLocaleSelector();
       wifiGetStatus().then(() => {
         initUI();
         updateSlotNames();
@@ -1198,7 +1223,21 @@ const initUIElements = () => {
     promptCancel: document.querySelector("[gbs-prompt-cancel]"),
     promptContent: document.querySelector("[gbs-prompt-content]"),
     promptInput: document.querySelector('[gbs-input="prompt-input"]'),
+    translatable: nodelistToArray<HTMLElement>(
+      document.querySelectorAll("[gbs-i18n]")
+    ) as HTMLElement[],
+    localeSelector: document.querySelector("[gbs-locale]"),
   };
+};
+
+const initLocaleSelector = () => {
+  GBSControl.currentLocale =
+    (GBSStorage.read("gbsLocale") as string) || GBSControl.currentLocale;
+  GBSControl.ui.localeSelector.innerHTML = getLocaleList();
+  GBSControl.ui.localeSelector.addEventListener("change", () => {
+    updateLocale(GBSControl.ui.localeSelector.value);
+  });
+  updateLocale(GBSControl.currentLocale);
 };
 
 const initGeneralListeners = () => {

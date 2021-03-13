@@ -545,6 +545,21 @@
             </legend>
             <table class="gbs-preferences">
               <tr>
+                <td colspan="2" class="gbs-preferences__child">
+                  <span gbs-i18n="preferences.language"
+                    >Language</span
+                  >
+                  <!-- prettier-ignore -->
+                  <ul class="gbs-help">
+                    <li gbs-i18n="preferences.customSlotFilters.help.0">When enabled, saved slots recover it owns filter preferences.</li>
+                    <li gbs-i18n="preferences.customSlotFilters.help.1">When disabled, saved slots maintain current filter settings.</li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2"><select class="gbs-button" gbs-locale></select></td>
+              </tr>
+              <tr>
                 <td>
                   <span gbs-i18n="preferences.matchedPresets"
                     >Matched Presets</span
