@@ -20,7 +20,7 @@
   "control.adcGain.help.0": "Ganho +/- ajusta o ganho para a predefinição atual carregada.",
   "control.adcGain.-": "ganho",
   "control.adcGain.+": "ganho",
-  "control.autoGain": "Ganho Automático",
+  "control.autoGain": "Ganho Auto",
   "control.picture": "Controle da Imagem",
   "control.picture.move": "Mover",
   "control.picture.scale": "Escala",
