@@ -1,4 +1,5 @@
 {
+  "localeName": "English",
   "presets.resolution.title": "Resolution",
   "presets.resolution.help.0": "Choose an output resolution from these presets.",
   "presets.resolution.help.1": "Your selection will also be used for startup. 1280x960 is recommended for NTSC sources, 1280x1024 for PAL.",
@@ -39,6 +40,7 @@
   "preferences.fullHeight.help.0": "Some presets default to not using the entire vertical output resolution, leaving some lines black.",
   "preferences.fullHeight.help.1": "With Full Height enabled, these presets will instead scale to fill more of the screen height.",
   "preferences.fullHeight.help.2": "(This currently only affects 1920 x 1080)",
+  "preferences.language": "Language",
   "preferences.lowResUpscaling": "Low Res: Use Upscaling",
   "preferences.lowResUpscaling.help.0": "Low Resolution VGA input: Pass-through or Upscale",
   "preferences.lowResUpscaling.help.1": "Low resolution sources can be either passed on directly or get upscaled.",
