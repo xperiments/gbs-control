@@ -1,0 +1,57 @@
+{
+  "name": "gbs-control-builder",
+  "version": "1.0.0",
+  "description": "Gbscontrol is an alternative firmware for Tvia Trueview5725 based upscalers / video converter boards.  \r Its growing list of features includes:   \r - very low lag\r - sharp and defined upscaling, comparing well to other -expensive- units\r - no synchronization loss switching 240p/480i (output runs independent from input, sync to display never drops)\r - on demand motion adaptive deinterlacer that engages automatically and only when needed\r - works with almost anything: 8 bit consoles, 16/32 bit consoles, 2000s consoles, home computers, etc\r - little compromise, eventhough the hardware is very affordable (less than $30 typically)\r - lots of useful features and image enhancements\r - optional control interface via web browser, utilizing the ESP8266 WiFi capabilities\r - good color reproduction with auto gain and auto offset for the tripple 8 bit @ 160MHz ADC\r - optional bypass capability to, for example, transcode Component to RGB/HV in high quality",
+  "scripts": {
+    "RELEASE": "----------------------------------------------------------------",
+    "releaseOSX": "npm run compile:ui && npm run compile:d1_mini:osx && npm run compile:nodemcuv2:osx && npm run compress-installers",
+    "releaseWIN": "npm run compile:ui && npm run compile:d1_mini:win && npm run compile:nodemcuv2:win && npm run compress-installers",
+    "releaseLINUX": "npm run compile:ui && npm run compile:d1_mini:linux && npm run compile:nodemcuv2:linux && npm run compress-installers",
+    "COMPILE": "----------------------------------------------------------------",
+    "compile:ui": "cd public && npm run build",
+    "compile:d1_mini:osx": "npm run update:revision && ./compiler/osx/arduino-cli compile --export-binaries --fqbn esp8266:esp8266:d1_mini:xtal=160,vt=flash,exception=legacy,ssl=all,eesz=4M1M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600 gbs-control",
+    "compile:nodemcuv2:osx": "npm run update:revision && ./compiler/osx/arduino-cli compile --export-binaries --fqbn esp8266:esp8266:nodemcuv2:xtal=160,vt=flash,exception=legacy,ssl=all,eesz=4M1M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600 gbs-control",
+    "compile:d1_mini:win": "npm run update:revision && ./compiler/win/arduino-cli.exe compile --export-binaries --fqbn esp8266:esp8266:d1_mini:xtal=160,vt=flash,exception=legacy,ssl=all,eesz=4M1M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600 gbs-control",
+    "compile:nodemcuv2:win": "npm run update:revision && ./compiler/win/arduino-cli.exe compile --export-binaries --fqbn esp8266:esp8266:nodemcuv2:xtal=160,vt=flash,exception=legacy,ssl=all,eesz=4M1M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600 gbs-control",
+    "compile:d1_mini:linux": "npm run update:revision && ./compiler/linux/arduino-cli compile --export-binaries --fqbn esp8266:esp8266:d1_mini:xtal=160,vt=flash,exception=legacy,ssl=all,eesz=4M1M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600 gbs-control",
+    "compile:nodemcuv2:linux": "npm run update:revision && ./compiler/linux/arduino-cli compile --export-binaries --fqbn esp8266:esp8266:nodemcuv2:xtal=160,vt=flash,exception=legacy,ssl=all,eesz=4M1M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600 gbs-control",
+    "DEV": "----------------------------------------------------------------",
+    "dev:mini": "npm run compile:ui && npm run compile:$npm_config_target:$npm_config_os && cd scripts && node upload-firmware.js $npm_config_target",
+    "dev:mini:osx": "npm run dev:mini --os=osx --target=d1_mini",
+    "dev:nodemcuv2:osx": "npm run dev:mini --os=osx --target=nodemcuv2",
+    "dev:mini:win": "npm run dev:mini --os=win --target=d1_mini",
+    "dev:nodemcuv2:win": "npm run dev:mini --os=win --target=nodemcuv2",
+    "dev:mini:linux": "npm run dev:mini --os=linux --target=d1_mini",
+    "dev:nodemcuv2:linux": "npm run dev:mini --os=linux --target=nodemcuv2",
+    "UTILS": "----------------------------------------------------------------",
+    "update:revision": "cd scripts && node update-revision.js",
+    "compress-installers": "cd scripts && node generate-install-zips.js",
+    "ARDUINO": "----------------------------------------------------------------",
+    "arduino:install": "npm run arduino:cli:install:$npm_config_os && npm run arduino:libs:download && npm run arduino:libs:install:$npm_config_os && npm run arduino:libs:cleanup",
+    "arduino:cli:install:osx": "./compiler/osx/arduino-cli config init && ./compiler/osx/arduino-cli config add board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json && ./compiler/osx/arduino-cli core update-index && ./compiler/osx/arduino-cli core install esp8266:esp8266 && ./compiler/osx/arduino-cli core update-index && ./compiler/osx/arduino-cli config set library.enable_unsafe_install true",
+    "arduino:libs:install:osx": "./compiler/osx/arduino-cli lib install --zip-path ./scripts/ESPAsyncTCP.zip ./scripts/ESPAsyncWebServer.zip",
+    "arduino:cli:install:win": "./compiler/win/arduino-cli.exe config init && ./compiler/win/arduino-cli.exe config add board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json && ./compiler/win/arduino-cli.exe core update-index && ./compiler/win/arduino-cli.exe core install esp8266:esp8266 && ./compiler/win/arduino-cli.exe core update-index && ./compiler/win/arduino-cli.exe config set library.enable_unsafe_install true",
+    "arduino:libs:install:win": "./compiler/win/arduino-cli.exe lib install --zip-path ./scripts/ESPAsyncTCP.zip ./scripts/ESPAsyncWebServer.zip",
+    "arduino:cli:install:linux": "./compiler/linux/arduino-cli config init && ./compiler/linux/arduino-cli config add board_manager.additional_urls https://arduino.esp8266.com/stable/package_esp8266com_index.json && ./compiler/linux/arduino-cli core update-index && ./compiler/linux/arduino-cli core install esp8266:esp8266 && ./compiler/linux/arduino-cli core update-index && ./compiler/linux/arduino-cli config set library.enable_unsafe_install true",
+    "arduino:libs:install:linux": "./compiler/linux/arduino-cli lib install --zip-path ./scripts/ESPAsyncTCP.zip ./scripts/ESPAsyncWebServer.zip",
+    "arduino:libs:download": "cd scripts && node download-libs.js",
+    "arduino:libs:cleanup": "rm ./scripts/*.zip "
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xperiments/gbs-control.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/xperiments/gbs-control/issues"
+  },
+  "homepage": "https://github.com/xperiments/gbs-control#readme",
+  "devDependencies": {
+    "adm-zip": "^0.5.4",
+    "form-data": "^4.0.0",
+    "node-fetch": "^2.6.1",
+    "request": "^2.88.2",
+    "zip-a-folder": "^0.1.0"
+  }
+}
