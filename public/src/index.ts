@@ -77,6 +77,21 @@ const StructParser = {
   },
 };
 
+/* semver compare */
+const semverCompare = (a: string, b: string) => {
+  var pa = a.split(".");
+  var pb = b.split(".");
+  for (var i = 0; i < 3; i++) {
+    var na = Number(pa[i]);
+    var nb = Number(pb[i]);
+    if (na > nb) return 1;
+    if (nb > na) return -1;
+    if (!isNaN(na) && isNaN(nb)) return 1;
+    if (isNaN(na) && !isNaN(nb)) return -1;
+  }
+  return 0;
+};
+
 /* GBSControl Global Object*/
 const GBSControl = {
   buttonMapping: {
@@ -154,6 +169,9 @@ const GBSControl = {
     promptCancel: null,
     promptContent: null,
     promptInput: null,
+    updateOTAInput: null,
+    firmwareUpdate: null,
+    firmwareUpdateContent: null,
   },
   updateTerminalTimer: 0,
   webSocketServerUrl: "",
@@ -220,7 +238,7 @@ const createWebSocket = () => {
 
     GBSControl.wsConnectCounter++;
     clearTimeout(GBSControl.wsTimeout);
-    GBSControl.wsTimeout = setTimeout(timeOutWs, 6000);
+    GBSControl.wsTimeout = (setTimeout(timeOutWs, 6000) as any) as number;
     GBSControl.isWsActive = true;
     GBSControl.wsNoSuccessConnectingCounter = 0;
   };
@@ -234,7 +252,7 @@ const createWebSocket = () => {
 
   GBSControl.ws.onmessage = (message: any) => {
     clearTimeout(GBSControl.wsTimeout);
-    GBSControl.wsTimeout = setTimeout(timeOutWs, 2700);
+    GBSControl.wsTimeout = (setTimeout(timeOutWs, 2700) as any) as number;
     GBSControl.isWsActive = true;
 
     const [
@@ -392,8 +410,14 @@ const checkReadyState = () => {
 };
 
 const createIntervalChecks = () => {
-  GBSControl.wsCheckTimer = setInterval(checkWebSocketServer, 500);
-  GBSControl.updateTerminalTimer = setInterval(updateTerminal, 50);
+  GBSControl.wsCheckTimer = (setInterval(
+    checkWebSocketServer,
+    500
+  ) as any) as number;
+  GBSControl.updateTerminalTimer = (setInterval(
+    updateTerminal,
+    50
+  ) as any) as number;
 };
 
 /* API services */
@@ -701,7 +725,7 @@ const checkFetchResponseStatus = (response: Response) => {
   return response;
 };
 
-const readLocalFile = (file: File) => {
+const readBackupFile = (file: File) => {
   const reader = new FileReader();
   reader.addEventListener("load", (event) => {
     doRestore(reader.result as ArrayBuffer);
@@ -830,7 +854,7 @@ const doRestore = (file: ArrayBuffer) => {
     GBSControl.ui.progressRestore.setAttribute("gbs-progress", ``);
     loadUser("a").then(() => {
       gbsAlert(
-        "Restarting GBSControl.\nPlease wait until wifi reconnects then click OK"
+        "Restarting GBSControl.\nPlease wait until WiFi reconnects then click OK"
       )
         .then(() => {
           window.location.reload();
@@ -1195,7 +1219,196 @@ const initUIElements = () => {
     promptCancel: document.querySelector("[gbs-prompt-cancel]"),
     promptContent: document.querySelector("[gbs-prompt-content]"),
     promptInput: document.querySelector('[gbs-input="prompt-input"]'),
+    updateOTAInput: document.querySelector(".gbs-updateOTA-input"),
+    firmwareUpdate: document.querySelector('section[name="fw-update"]'),
+    firmwareUpdateContent: document.querySelector("[gbs-fw-update-content]"),
   };
+};
+
+const updateOTA = (file) => {
+  if (!file) {
+    return;
+  }
+
+  fetch("/version")
+    .then((r) => r.text())
+    .then((flashVersion: string) => {
+      const [
+        flashMajor,
+        flashMinor,
+        flashPatch,
+        flashRevision,
+        flashTarget,
+      ] = flashVersion.split(".").map((e, i) => {
+        if (i < 4) {
+          return parseInt(e, 10);
+        }
+        return e;
+      });
+
+      const formData = new FormData();
+      const request = new XMLHttpRequest();
+      request.addEventListener("load", () => {
+        if (request.status === 200) {
+          gbsFirmwareUpdatePromise.resolve();
+          gbsFirmwareUpdate(
+            `<p>Firmware Update Completed!.Reseting...</p><p>Verify your WiFi connection</p>`
+          );
+          setTimeout(() => {
+            window.location.reload();
+          }, 5000);
+        } else if (request.status === 500) {
+          gbsFirmwareUpdatePromise.resolve();
+          gbsAlert("Server Error").catch(() => {});
+        } else {
+          gbsFirmwareUpdatePromise.resolve();
+          gbsAlert(request.responseText).catch(() => {});
+        }
+      });
+      request.withCredentials = true;
+      fileMD5(file)
+        .then(([md5, major, minor, patch, revision, fwVersion]) => {
+          let reader = new FileReader();
+          console.log(fwVersion, flashTarget);
+          if (fwVersion !== flashTarget) {
+            gbsFirmwareUpdatePromise.resolve();
+            gbsAlert("Invalid Board Firmware");
+            return;
+          }
+          reader.onload = function (e) {
+            if (
+              semverCompare(
+                [major, minor, patch].join("."),
+                [flashMajor, flashMinor, flashPatch].join(".")
+              ) === -1
+            ) {
+              return gbsAlert(
+                "Invalid Firmware version. While downgrading is posible, it is not enabled in the OTA update. Please upload the needed firmware with the provided command line install script"
+              );
+            }
+            const targetLength = new Uint8Array(
+              (e.target.result as ArrayBuffer).slice(4, 5)
+            )[0];
+            const blob = new Blob(
+              [
+                new Uint8Array(e.target.result as ArrayBuffer).slice(
+                  targetLength + 13
+                ),
+              ],
+              {
+                type: "application/octet-stream",
+              }
+            );
+            const fileBlob = new File([blob], "firmware", {
+              type: "application/octet-stream",
+            });
+            formData.append("MD5", md5);
+            formData.append("firmware", fileBlob, "firmware");
+            request.open("post", "/update");
+            request.send(formData);
+          };
+          reader.readAsArrayBuffer(file);
+        })
+        .catch((error) => {
+          gbsAlert(
+            error || "Unknown error while uploading Firmware"
+          ).catch(() => {});
+        });
+    });
+};
+
+declare var SparkMD5;
+
+const isValidHeader = (headerArray: Uint8Array) => {
+  return (
+    [71, 66, 83, 67]
+      .map((e, idx) => {
+        console.log(idx, e, headerArray[idx]);
+        return e === headerArray[idx];
+      })
+      .filter((e) => e === false).length === 0
+  );
+};
+
+const fileMD5 = (file) => {
+  return new Promise<[string, number, number, number, number, string]>(
+    (resolve, reject) => {
+      const blobSlice =
+        File.prototype.slice ||
+        File.prototype["mozSlice"] ||
+        File.prototype["webkitSlice"];
+
+      const chunkSize = 2097152; // Read in chunks of 2MB
+      const chunks = Math.ceil(file.size / chunkSize);
+      const spark = new SparkMD5.ArrayBuffer();
+      const fileReader = new FileReader();
+      let currentChunk = 0;
+
+      const loadNext = () => {
+        const start = currentChunk * chunkSize;
+        const end =
+          start + chunkSize >= file.size ? file.size : start + chunkSize;
+        fileReader.readAsArrayBuffer(blobSlice.call(file, start, end));
+      };
+
+      let major: number;
+      let minor: number;
+      let patch: number;
+      let revision: number;
+      let fwTarget = "";
+
+      fileReader.onload = (e) => {
+        if (currentChunk === 0) {
+          const result = e.target.result as ArrayBuffer;
+
+          if (!isValidHeader(new Uint8Array(result.slice(0, 4)))) {
+            reject("Invalid Header");
+          }
+          const fwTargetLength = new Uint8Array(result.slice(4, 5))[0];
+          const uint16VersionArray = new Uint16Array(
+            result.slice(5 + fwTargetLength, 5 + fwTargetLength + 8)
+          );
+          major = uint16VersionArray[0];
+          minor = uint16VersionArray[1];
+          patch = uint16VersionArray[2];
+          revision = uint16VersionArray[3];
+
+          fwTarget = Array.from(
+            new Uint8Array(result.slice(5, 5 + fwTargetLength))
+          )
+            .map((e: number) => String.fromCharCode(e))
+            .join("");
+          console.log("fwtarget", fwTarget);
+          spark.append(result.slice(5 + fwTargetLength + 8)); // Append array buffer
+        } else {
+          spark.append(e.target.result); // Append array buffer
+        }
+        currentChunk++;
+
+        if (currentChunk < chunks) {
+          loadNext();
+        } else {
+          gbsFirmwareUpdate(
+            `<span class="gbs-icon gbs-icon--rotate">autorenew</span> Updating firmware v${[
+              major,
+              minor,
+              patch,
+              fwTarget,
+            ].join(".")}`
+          ).catch(() => {});
+
+          resolve([spark.end(), major, minor, patch, revision, fwTarget]); // Compute hash
+        }
+      };
+
+      fileReader.onerror = function () {
+        console.warn("oops, something went wrong.");
+        reject();
+      };
+
+      loadNext();
+    }
+  );
 };
 
 const initGeneralListeners = () => {
@@ -1205,8 +1418,13 @@ const initGeneralListeners = () => {
 
   GBSControl.ui.backupInput.addEventListener("change", (event) => {
     const fileList: FileList = event.target["files"];
-    readLocalFile(fileList[0]);
+    readBackupFile(fileList[0]);
     GBSControl.ui.backupInput.value = "";
+  });
+
+  GBSControl.ui.updateOTAInput.addEventListener("change", (event) => {
+    const fileList: FileList = event.target["files"];
+    updateOTA(fileList[0]);
   });
 
   GBSControl.ui.backupButton.addEventListener("click", doBackup);
@@ -1293,6 +1511,27 @@ const gbsAlert = (text: string) => {
     gbsAlertPromise.reject = () => {
       document.removeEventListener("keyup", alertKeyListener);
       GBSControl.ui.alert.setAttribute("hidden", "");
+      return reject();
+    };
+  });
+};
+
+const gbsFirmwareUpdatePromise = {
+  resolve: null,
+  reject: null,
+};
+
+const gbsFirmwareUpdate = (text: string) => {
+  GBSControl.ui.firmwareUpdateContent.innerHTML = text;
+  GBSControl.ui.firmwareUpdate.removeAttribute("hidden");
+
+  return new Promise((resolve, reject) => {
+    gbsFirmwareUpdatePromise.resolve = (e) => {
+      GBSControl.ui.firmwareUpdate.setAttribute("hidden", "");
+      return resolve(e);
+    };
+    gbsFirmwareUpdatePromise.reject = () => {
+      GBSControl.ui.firmwareUpdate.setAttribute("hidden", "");
       return reject();
     };
   });

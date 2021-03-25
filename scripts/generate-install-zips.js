@@ -2,7 +2,9 @@ const fs = require("fs");
 const AdmZip = require("adm-zip");
 const { version } = require("../version.json");
 
-const [major, minor, patch] = version.split(".").map((n) => parseInt(n, 10));
+const [major, minor, patch, revision] = version
+  .split(".")
+  .map((n) => parseInt(n, 10));
 const buildPath = "../build";
 const binPath = "../compiler/";
 const fwTargets = ["d1_mini", "nodemcuv2"];
@@ -206,7 +208,11 @@ const main = () => {
 
           const otaBytesOutput = Buffer.concat([
             GBSHeader,
-            Buffer.from(new Uint16Array([major, minor, patch]).buffer),
+            Buffer.from([fwTarget.length]),
+            Buffer.from(fwTarget),
+            Buffer.from(
+              new Uint16Array([major, minor, patch, revision]).buffer
+            ),
             otaBytes,
           ]);
 
@@ -270,7 +276,11 @@ const main = () => {
 
           const otaBytesOutput = Buffer.concat([
             GBSHeader,
-            Buffer.from(new Uint16Array([major, minor, patch]).buffer),
+            Buffer.from([fwTarget.length]),
+            Buffer.from(fwTarget),
+            Buffer.from(
+              new Uint16Array([major, minor, patch, revision]).buffer
+            ),
             otaBytes,
           ]);
 
@@ -288,7 +298,6 @@ const main = () => {
           `${targetPath}/arduino-cli-64`
         );
         break;
-
       case "osx":
         targetPath = `./package/${target}`;
         createDir(targetPath);
@@ -313,7 +322,11 @@ const main = () => {
 
           const otaBytesOutput = Buffer.concat([
             GBSHeader,
-            Buffer.from(new Uint16Array([major, minor, patch]).buffer),
+            Buffer.from([fwTarget.length]),
+            Buffer.from(fwTarget),
+            Buffer.from(
+              new Uint16Array([major, minor, patch, revision]).buffer
+            ),
             otaBytes,
           ]);
 

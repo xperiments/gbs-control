@@ -383,3 +383,8 @@ ASALocalRun/
 
 # VSCode settings
 *.vscode
+
+# arduino intermediate binary files
+build/
+scripts/package
+release-files/*

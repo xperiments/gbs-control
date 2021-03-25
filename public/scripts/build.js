@@ -1,6 +1,9 @@
 const fs = require("fs");
 const html = fs.readFileSync("./../src/index.html.tpl", "utf-8");
-const js = fs.readFileSync("./../src/index.js", "utf-8");
+const js = [
+  fs.readFileSync("./../src/spark-md5.js", "utf-8"),
+  fs.readFileSync("./../src/index.js", "utf-8"),
+].join("\n");
 
 const icon1024 = fs
   .readFileSync("./../assets/icons/icon-1024-maskable.png")

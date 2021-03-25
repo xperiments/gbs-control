@@ -32,8 +32,7 @@
 #include <DNSServer.h>
 #include <WiFiUdp.h>
 #include <ESP8266mDNS.h>  // mDNS library for finding gbscontrol.local on the local network
-#include <ArduinoOTA.h>
-
+#include "src/GBSFirmwareUpdate.h"
 // PersWiFiManager library by Ryan Downing
 // https://github.com/r-downing/PersWiFiManager
 // included in project root folder to allow modifications within limitations of the Arduino framework
@@ -72,6 +71,7 @@ Si5351mcu Si;
 #ifdef THIS_DEVICE_MASTER
 const char* ap_ssid = "gbscontrol";
 const char* ap_password = "qqqqqqqq";
+
 // change device_hostname_full and device_hostname_partial to rename the device 
 // (allows 2 or more on the same network)
 // new: only use _partial throughout, comply to standards
@@ -93,6 +93,8 @@ static const char ap_info_string[] PROGMEM =
 static const char st_info_string[] PROGMEM =
 "(WiFi): Access 'http://gbsslave:80' or 'http://gbsslave.local' (or device IP) in your browser";
 #endif
+
+String gbsVersionString = "0.9.8.91.d1_mini";
 
 AsyncWebServer server(80);
 DNSServer dnsServer;
@@ -7387,10 +7389,7 @@ void handleWiFi(boolean instant) {
       }
       lastTimePing = millis();
     }
-  }
-
-  if (rto->allowUpdatesOTA) {
-    ArduinoOTA.handle();
+    GBSFirmwareUpdate.loop();
   }
   yield();
 }
@@ -7789,9 +7788,9 @@ void loop() {
       rto->printInfos = !rto->printInfos;
     break;
     case 'c':
-      SerialM.println(F("OTA Updates on"));
-      initUpdateOTA();
-      rto->allowUpdatesOTA = true;
+      // SerialM.println(F("OTA Updates on"));
+      // initUpdateOTA();
+      // rto->allowUpdatesOTA = true;
     break;
     case 'G':
       SerialM.print(F("Debug Pings "));
@@ -9139,6 +9138,14 @@ void startWebserver()
       request->send(response);
     }
   });
+  
+  server.on("/version", HTTP_GET, [](AsyncWebServerRequest *request) {
+      //Serial.println("sending web page");
+      if (ESP.getFreeHeap() > 10000) {
+          AsyncWebServerResponse *response = request->beginResponse(200, "text/html", gbsVersionString);
+          request->send(response);
+      }
+  });
 
   server.on("/sc", HTTP_GET, [](AsyncWebServerRequest* request) {
     if (ESP.getFreeHeap() > 10000) {
@@ -9417,6 +9424,7 @@ void startWebserver()
   }
 
   server.begin(); // Webserver for the site
+  GBSFirmwareUpdate.begin(&server);
   webSocket.begin();  // Websocket for interaction
   yield();
 
@@ -9450,46 +9458,6 @@ void startWebserver()
     return true;
   });
 #endif
-}
-
-void initUpdateOTA() {
-  ArduinoOTA.setHostname("GBS OTA");
-
-  // ArduinoOTA.setPassword("admin");
-  // Password can be set with it's md5 value as well
-  // MD5(admin) = 21232f297a57a5a743894a0e4a801fc3
-  //ArduinoOTA.setPasswordHash("21232f297a57a5a743894a0e4a801fc3");
-
-  // update: no password is as (in)secure as this publicly stated hash..
-  // rely on the user having to enable the OTA feature on the web ui
-
-  ArduinoOTA.onStart([]() {
-    String type;
-    if (ArduinoOTA.getCommand() == U_FLASH)
-      type = "sketch";
-    else // U_SPIFFS
-      type = "filesystem";
-
-    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    SPIFFS.end();
-    SerialM.println("Start updating " + type);
-  });
-  ArduinoOTA.onEnd([]() {
-    SerialM.println("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    SerialM.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    SerialM.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) SerialM.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) SerialM.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) SerialM.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) SerialM.println("Receive Failed");
-    else if (error == OTA_END_ERROR) SerialM.println("End Failed");
-  });
-  ArduinoOTA.begin();
-  yield();
 }
 
 // sets every element of str to 0 (clears array)

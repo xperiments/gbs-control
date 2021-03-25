@@ -1189,13 +1189,11 @@
             </legend>
             <div class="gbs-flex">
               <button
-                gbs-message="c"
-                gbs-message-type="action"
-                gbs-click="normal"
                 class="gbs-button gbs-button__control"
               >
                 <div class="gbs-icon">system_update_alt</div>
-                <div>Enable OTA</div>
+                <div>Firmware Update</div>
+                <input type="file" class="gbs-updateOTA-input gbs-file-input" accept=".ota"/>
               </button>
               <button
                 gbs-message="a"
@@ -1239,7 +1237,7 @@
                 class="gbs-button gbs-button__control gbs-button__secondary"
               >
                 <div class="gbs-icon">cloud_upload</div>
-                <input type="file" class="gbs-backup-input" accept=".bin"/>
+                <input type="file" class="gbs-backup-input gbs-file-input" accept=".bin"/>
                 <div gbs-progress gbs-progress-restore>Restore</div>
               </button>
             </div>
@@ -1350,6 +1348,18 @@
                 <div>OK</div>
               </button>
             </div>
+          </fieldset>
+        </section>
+        <section name="fw-update" hidden>
+          <fieldset class="gbs-fieldset">
+            <legend class="gbs-fieldset__legend">
+              <div class="gbs-icon">memory</div>
+              <div>Firmware Update</div>
+            </legend>
+            <div
+              class="gbs-padding__hor-16 gbs-modal__message gbs-left"
+              gbs-fw-update-content
+            ></div>
           </fieldset>
         </section>
         <div class="gbs-output">

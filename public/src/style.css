@@ -79,6 +79,10 @@ body {
   user-select: none;
 }
 
+.gbs-left {
+  text-align: left !important;
+}
+
 /** main container */
 .gbs-container {
   background-color: var(--color-mine-shaft);
@@ -486,7 +490,8 @@ input {
 /* modals */
 
 section[name="prompt"],
-section[name="alert"] {
+section[name="alert"],
+section[name="fw-update"] {
   background-color: rgba(0, 0, 0, 0.96);
   bottom: 0;
   left: 0;
@@ -499,6 +504,7 @@ section[name="alert"] {
   text-align: right;
   margin-top: 16px;
   margin-bottom: 32px;
+  position: relative;
 }
 
 /* HELPERS */
@@ -510,7 +516,7 @@ section[name="alert"] {
   content: attr(gbs-progress);
 }
 
-.gbs-backup-input {
+.gbs-file-input {
   cursor: pointer;
   height: 100%;
   left: 0;
@@ -554,6 +560,11 @@ section[name="alert"] {
   text-transform: none;
   white-space: nowrap;
   word-wrap: normal;
+}
+
+.gbs-icon--rotate {
+  position: relative;
+  animation: spin 4s linear infinite;
 }
 
 .gbs-flex {
@@ -659,5 +670,12 @@ section[name="alert"] {
 @keyframes gbs-blinker {
   50% {
     opacity: 0;
+  }
+}
+
+@keyframes spin {
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
   }
 }
